@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="focus_rect">50dp</dimen>
+    <dimen name="password_interval">2dp</dimen>
+
+    <dimen name="oneDP">2dp</dimen>
+</resources>
