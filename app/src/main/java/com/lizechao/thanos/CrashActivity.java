@@ -20,11 +20,14 @@ import pers.lizechao.android_lib.ui.common.BaseActivity;
 import pers.lizechao.android_lib.ui.manager.StatusBarManager;
 
 public class CrashActivity extends BaseActivity<com.lizechao.thanos.databinding.ActivityCrashBinding> {
+    //SurfaceView 管理
     private SurfaceManager surfaceManager;
+    //粉碎特效实现
     private CrashAnim crashAnim;
     private List<View> dismissView = new ArrayList<>();
     Random random = new Random();
 
+    //打响指动画
     private AnimationDrawable doAnim;
     private AnimationDrawable backAnim;
 
