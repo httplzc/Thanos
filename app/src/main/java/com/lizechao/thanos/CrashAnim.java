@@ -3,6 +3,8 @@ package com.lizechao.thanos;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
@@ -56,13 +58,24 @@ public class CrashAnim extends SurfaceHandler {
 
         private boolean haveRemove = false;
         private long startTime = 0;
+        private Bitmap bitmap;
+
+        private final float MaxDelayProgress = 0.7f;
+
+        private Rect rectBitmap = new Rect();
+        private RectF drawArea = new RectF();
+
+        private float viewX;
+        private float viewY;
 
 
         public ViewFrame(View view, float x, float y) {
             this.view = view;
-            Bitmap bitmap = loadBitmapFromView(view);
+            bitmap = loadBitmapFromView(view);
             pointList = spitToPoint(bitmap, x, y, randomSymbol(random));
             paint.setStrokeWidth(view.getResources().getDimension(R.dimen.oneDP));
+            viewX = x;
+            viewY = y;
         }
 
         @Override
@@ -91,13 +104,19 @@ public class CrashAnim extends SurfaceHandler {
                 alpha = (int) (255 * alphaRatio);
                 alpha = alpha < 0 ? 0 : alpha;
             }
+            float progress = (float) currentTime / MaxTime;
+            int cancelDrawWidth = (int) (bitmap.getWidth() * (progress / MaxDelayProgress));
+            rectBitmap.set(cancelDrawWidth, 0, bitmap.getWidth(), bitmap.getHeight());
+            drawArea.set(viewX + cancelDrawWidth, viewY, viewX + bitmap.getWidth(), viewY + bitmap.getHeight());
+            canvas.drawBitmap(bitmap, rectBitmap, drawArea, null);
             for (PointData pointData : pointList) {
-                if (alpha != -1)
-                    pointData.setColorAlpha(alpha);
-                paint.setColor(pointData.color);
-                pointData.calcPosition((float) currentTime / MaxTime);
-                canvas.drawPoint(pointData.x, pointData.y, paint);
-
+                if (progress > MaxDelayProgress * pointData.widthPercent) {
+                    if (alpha != -1)
+                        pointData.setColorAlpha(alpha);
+                    paint.setColor(pointData.color);
+                    pointData.calcPosition(progress);
+                    canvas.drawPoint(pointData.x, pointData.y, paint);
+                }
             }
         }
     }
@@ -115,7 +134,7 @@ public class CrashAnim extends SurfaceHandler {
         List<PointData> pointDataList = new ArrayList<>();
         for (int i = 0; i < bitmap.getWidth(); i += 6) {
             for (int i1 = 0; i1 < bitmap.getHeight(); i1 += 6) {
-                pointDataList.add(new PointData(x + i, y + i1, bitmap.getPixel(i, i1), (float) i / bitmap.getWidth(), xSymbol));
+                pointDataList.add(new PointData(x + i, y + i1, bitmap.getPixel(i, i1), xSymbol, (float) i / bitmap.getWidth()));
             }
         }
 
@@ -124,7 +143,7 @@ public class CrashAnim extends SurfaceHandler {
 
     private Bitmap loadBitmapFromView(View v) {
         Bitmap screenshot;
-        screenshot = Bitmap.createBitmap(v.getWidth(), v.getHeight(), Bitmap.Config.RGB_565);
+        screenshot = Bitmap.createBitmap(v.getWidth(), v.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(screenshot);
         c.translate(-v.getScrollX(), -v.getScrollY());
         v.draw(c);
@@ -138,28 +157,26 @@ public class CrashAnim extends SurfaceHandler {
 
         private float speedX;
         private float speedY;
-        private final float maxDelayProgress = 0.3f;
-        //0-1
-        private final float delayProgress;
+
+        private float widthPercent;
 
 
-        public PointData(float x, float y, int color, float delayProgress, int xSymbol) {
+        public PointData(float x, float y, int color, int xSymbol, float widthPercent) {
             this.x = x;
             this.y = y;
             this.color = color;
-            speedX = JavaUtils.random(random, 0.2f, 1f) * xSymbol;
+            speedX = JavaUtils.random(random, 0.2f, 1f) * 1;
             speedY = JavaUtils.random(random, 0.05f, 1f) * -1;
-            this.delayProgress = delayProgress;
+            this.widthPercent = widthPercent;
         }
 
         /**
          * @param progress 0-1
          */
         public void calcPosition(float progress) {
-            if (progress < maxDelayProgress * delayProgress)
-                return;
-            x += baseSpeedX * speedX * interpolator.getInterpolation(progress) * SurfaceManager.getIntervalRefresh();
-            y += baseSpeedY * speedY * interpolator.getInterpolation(progress) * SurfaceManager.getIntervalRefresh();
+            float percentWidthSpeed = (1 - widthPercent) * 3f;
+            x +=  speedX * interpolator.getInterpolation(progress) * SurfaceManager.getIntervalRefresh();
+            y += percentWidthSpeed*baseSpeedY * speedY * interpolator.getInterpolation(progress) * SurfaceManager.getIntervalRefresh();
         }
 
         public void setColorAlpha(int alpha) {
@@ -169,18 +186,18 @@ public class CrashAnim extends SurfaceHandler {
     }
 
 
-    public void addAnimView(View view,float x,float y) {
+    public void addAnimView(View view, float x, float y) {
         viewFrameList.add(new ViewFrame(view, x, y));
     }
 
     public void addAnimViewRecursion(View view, float x, float y) {
         if (view instanceof ViewGroup) {
             for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++) {
-                View child=((ViewGroup) view).getChildAt(i);
+                View child = ((ViewGroup) view).getChildAt(i);
                 addAnimViewRecursion(child, child.getX() + x, child.getY() + y);
             }
         } else {
-            addAnimView(view,x,y);
+            addAnimView(view, x, y);
         }
 
     }
@@ -215,8 +232,8 @@ public class CrashAnim extends SurfaceHandler {
     protected void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 //        baseSpeedX = width / (1080 / 3); //  px/ms
 //        baseSpeedY = height / (1920 / 3); //  px/ms
-        baseSpeedX = width / (1080 / 0.7f); //  px/ms
-        baseSpeedY = width / (1080 / 0.3f); //  px/ms
+        baseSpeedX = width / (1080 / 0.5f); //  px/ms
+        baseSpeedY = width / (1080 / 0.25f); //  px/ms
     }
 
     @Override
