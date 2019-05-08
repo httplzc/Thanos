@@ -174,9 +174,9 @@ public class CrashAnim extends SurfaceHandler {
          * @param progress 0-1
          */
         public void calcPosition(float progress) {
-            float percentWidthSpeed = (1 - widthPercent) * 3f;
-            x +=  speedX * interpolator.getInterpolation(progress) * SurfaceManager.getIntervalRefresh();
-            y += percentWidthSpeed*baseSpeedY * speedY * interpolator.getInterpolation(progress) * SurfaceManager.getIntervalRefresh();
+            float percentWidthSpeed = (1 - widthPercent) * 2.5f;
+            x += speedX * baseSpeedX * interpolator.getInterpolation(progress) * SurfaceManager.getIntervalRefresh();
+            y += percentWidthSpeed * baseSpeedY * speedY * interpolator.getInterpolation(progress) * SurfaceManager.getIntervalRefresh();
         }
 
         public void setColorAlpha(int alpha) {
