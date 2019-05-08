@@ -8,7 +8,7 @@
 
 
 ![灭霸打响指](https://github.com/httplzc/Thanos/blob/master/thanos1.gif)
-![英雄重生](https://github.com/httplzc/Thanos/blob/master/thanos1.gif)
+![英雄重生](https://github.com/httplzc/Thanos/blob/master/thanos2.gif)
 
 
 
